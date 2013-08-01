@@ -1,0 +1,78 @@
+'This macro will autofilter by each entry in a selected column
+'Then run Copy_Paste
+ 
+Sub Cycle()
+'Author:    Jerry Beaucaire
+'Date:      11/11/2009
+'Summary:   Based on selected column, data is filtered to individual sheets
+'           Creates sheets and sorts sheets alphabetically in workbook
+'           6/10/2010 - added check to abort if only one value in vCol
+'           7/22/2010 - added ability to parse numeric values consistently
+'           11/16/2011 - changed way Unique values are collected, no Adv Filter
+ 
+Dim LR As Long, Itm As Long, MyCount As Long, vCol As Long, iCol As Long
+Dim ws As Worksheet, MyArr As Variant, vTitles As String, TitleRow As Long
+Dim wb As Workbook, wb1 As Workbook
+Dim wbName As String, TopVisibleCell As Range, visibleName As String
+Dim col As Long, row As Long
+Set wb1 = Workbooks("Aon Choice Los Angeles Master File.xlsm")
+ 
+Application.ScreenUpdating = False
+ 
+'Column to evaluate from, column A = 1, B = 2, etc.
+   vCol = 1
+ 
+'Sheet with data in it
+   Set ws = Sheets("Master")
+ 
+'Range where titles are across top of data, as string, data MUST
+'have titles in this row, edit to suit your titles locale
+    vTitles = "A4:N4"
+    TitleRow = Range(vTitles).Cells(1).row
+ 
+'Spot bottom row of data
+   LR = ws.Cells(ws.Rows.Count, vCol).End(xlUp).row
+ 
+'Get a temporary list of unique values from vCol
+    iCol = ws.Columns.Count
+    ws.Cells(1, iCol) = "key"
+    
+    For Itm = 2 To LR
+        On Error Resume Next
+        If ws.Cells(Itm, vCol) <> "" And Application.WorksheetFunction _
+            .Match(ws.Cells(Itm, vCol), ws.Columns(iCol), 0) = 0 Then
+               ws.Cells(ws.Rows.Count, iCol).End(xlUp).Offset(1) = ws.Cells(Itm, vCol)
+        End If
+    Next Itm
+'Sort the temporary list
+    ws.Columns(iCol).Sort Key1:=ws.Cells(2, iCol), Order1:=xlAscending, _
+        Header:=xlYes, OrderCustom:=1, MatchCase:=False, _
+        Orientation:=xlTopToBottom, DataOption1:=xlSortNormal
+ 
+'Put list into an array for looping
+    MyArr = Application.WorksheetFunction.Transpose _
+        (ws.Columns(iCol).SpecialCells(xlCellTypeConstants))
+ 
+'clear temporary list
+    ws.Columns(iCol).Clear
+ 
+'Turn on the autofilter
+    ws.Range(vTitles).AutoFilter
+ 
+'Loop through list one value at a time
+'The array includes the title cell, so we start at the second value in the array
+'In case values are numerical, we convert them to text with ""
+'We then call Copy_Paste on the filtered data
+    For Itm = 3 To UBound(MyArr)
+         ws.Range(vTitles).AutoFilter Field:=vCol, Criteria1:=MyArr(Itm) & ""
+         Call Copy_Paste
+    Next Itm
+    
+'Cleanup
+    ws.AutoFilterMode = False
+        ws.Activate
+    MsgBox "Rows with data: " & (LR - TitleRow) & vbLf & "Rows copied to other sheets: " _
+                & MyCount & vbLf & "Hope they match!!"
+ 
+Application.ScreenUpdating = True
+End Sub

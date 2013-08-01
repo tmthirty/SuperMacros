@@ -1,0 +1,56 @@
+Sub Copy_Paste()
+'Author:    Tyler Martinez
+'Date:      05/22/2013
+'Summary:   Will Copy data in a selected range then paste data into new workbook
+'           Workbook name is determined from referenced cell values
+'           Will then print format the file 
+'           This code is a general outline for copy/pasting data and will need to be specifically edited
+'           For each file it is used with
+ 
+Dim wb As Workbook
+Dim wbName As String
+ 
+'Find the top visible cell and set value to referenced cell for file name
+'Remove this code if working with Pivot Table, rather than AutoFiltered data
+    
+    Set TopVisibleCell = Sheets("Master").AutoFilter.Range().Offset(1).SpecialCells(xlCellTypeVisible).Columns(1)
+    col = TopVisibleCell.Column
+    row = TopVisibleCell.row
+    Cells(473, 1) = Cells(row, col)
+  
+'Set name for workbook to be created
+    wbName = ThisWorkbook.Worksheets("Master").Range("A470") & "\" & ThisWorkbook.Worksheets("Master").Range("A471")
+    
+'Select the range over which data should be copied
+'This range should be the entire range of the table
+    Range("A1:N463").Select
+    Application.CutCopyMode = False
+    Selection.Copy
+    Set wb = Workbooks.Add
+ 
+'Paste data in new workbook
+    With ActiveSheet
+        .Cells(1).PasteSpecial xlPasteColumnWidths
+        .Cells(1).PasteSpecial xlPasteValues, , False, False
+        .Cells(1).PasteSpecial xlPasteFormats, , False, False
+        .Cells(1).Select
+        Application.CutCopyMode = False
+    End With
+    
+'Set Print Formatting    
+    ActiveSheet.PageSetup.PrintArea = ""
+    With ActiveSheet.PageSetup
+    .PrintTitleRows = "A1:N1"
+    .Zoom = False
+    .Orientation = xlLandscape
+    .FitToPagesWide = 1
+    .FitToPagesTall = False
+    End With
+ 
+'AutoFit columns to make data appear more aesthetically pleasing
+    Range("A:N").EntireColumn.AutoFit
+ 
+'Save and close
+    wb.SaveAs wbName
+    wb.Close
+End Sub
