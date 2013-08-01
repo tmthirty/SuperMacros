@@ -1,1 +1,1 @@
-This is just a test readme.
+Macros can be found in the "Macros" folder. All other files can be ignored as they are for use by Git.
